@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mahindra | Rise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --m-red: #c0392b;
+            --m-gold: #d4af37;
+            --m-dark: #0a0a0a;
+            --m-white: #ffffff;
+        }
+
+        body {
+            background-color: var(--m-dark);
+            color: var(--m-white);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        h1, h2, h3, .nav-link {
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+        }
+
+        /* Perspective Setup */
+        .scene {
+            perspective: 1200px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 3D Box Helper */
+        .car-container {
+            width: 300px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+
+        .car-3d {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            animation: rotateCar 12s linear infinite;
+        }
+
+        @keyframes rotateCar {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        .face {
+            position: absolute;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Transition Overlays */
+        #transition-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--m-red);
+            z-index: 9999;
+            clip-path: circle(0% at 50% 50%);
+            pointer-events: none;
+            transition: clip-path 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        #transition-overlay.active {
+            clip-path: circle(150% at 50% 50%);
+        }
+
+        .page {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transform: scale(1.05);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        /* Custom road animation */
+        .road {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            height: 200px;
+            background: repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,255,255,0.05) 51px, transparent 52px),
+                        linear-gradient(to bottom, transparent, rgba(192, 57, 43, 0.1));
+            transform: rotateX(70deg) translateZ(-50px);
+            animation: roadScroll 2s linear infinite;
+        }
+
+        @keyframes roadScroll {
+            from { background-position: 0 0; }
+            to { background-position: -100px 0; }
+        }
+
+        .nav-link.active {
+            color: var(--m-red);
+            border-bottom: 2px solid var(--m-red);
+        }
+
+        /* 3D Car specific styles */
+        .wheel {
+            width: 40px;
+            height: 40px;
+            background: #111;
+            border-radius: 50%;
+            border: 2px solid #222;
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        .glow-red { box-shadow: 0 0 30px rgba(192, 57, 43, 0.5); }
+        .glow-gold { box-shadow: 0 0 30px rgba(212, 175, 55, 0.3); }
+
+        .reveal-pop {
+            animation: revealPop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes revealPop {
+            0% { transform: translateZ(-400px) scale(0.5); filter: blur(20px); }
+            50% { transform: translateZ(200px) scale(1.3); filter: blur(5px); }
+            100% { transform: translateZ(0) scale(1); filter: blur(0); }
+        }
+
+        .bar-fill {
+            height: 6px;
+            background: var(--m-red);
+            border-radius: 3px;
+            box-shadow: 0 0 10px var(--m-red);
+            width: 0;
+            transition: width 1s cubic-bezier(1, 0, 0, 1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="transition-overlay"></div>
+
+    <nav class="fixed top-0 left-0 w-full z-[1000] px-12 py-6 flex justify-between items-center bg-transparent">
+        <div class="flex items-center gap-2">
+            <span class="text-3xl font-black italic text-m-red tracking-tighter">MAHINDRA</span>
+            <div class="w-1 h-1 bg-white rounded-full mt-2"></div>
+            <span class="text-[10px] tracking-[0.4em] font-medium opacity-50 uppercase mt-2">Pride of India</span>
+        </div>
+        <div class="hidden md:flex gap-10">
+            <button onclick="navTo('home')" class="nav-link text-xs tracking-[0.2em] font-semibold hover:text-m-red transition-colors active" data-page="home">Heritage</button>
+            <button onclick="navTo('carousel')" class="nav-link text-xs tracking-[0.2em] font-semibold hover:text-m-red transition-colors" data-page="carousel">Showcase</button>
+            <button onclick="navTo('compare')" class="nav-link text-xs tracking-[0.2em] font-semibold hover:text-m-red transition-colors" data-page="compare">Comparison</button>
+            <button onclick="navTo('compare')" class="nav-link text-xs tracking-[0.2em] font-semibold hover:text-m-red transition-colors">Connect</button>
+        </div>
+    </nav>
+
+    <!-- PAGE 1: HOME -->
+    <div id="page-home" class="page active">
+        <div class="absolute inset-0 z-0">
+            <canvas id="home-canvas"></canvas>
+            <div class="road"></div>
+        </div>
+        <div class="relative z-10 flex h-full items-center px-24">
+            <div class="w-1/2">
+                <h2 class="text-m-red font-bold text-lg tracking-[0.4em] mb-4">ESTABLISHED 1945</h2>
+                <h1 class="text-8xl font-black leading-none tracking-tighter mb-8 italic">
+                    BORN IN <span class="text-m-red">INDIA</span><br>
+                    BUILT FOR THE <span class="text-m-red">WORLD</span>.
+                </h1>
+                <p class="text-white/40 max-w-sm mb-12 text-sm leading-relaxed">
+                    A legacy of grit, a future of innovation. Experience the most advanced SUVs designed to conquer every terrain with absolute authority.
+                </p>
+                <button onclick="navTo('carousel')" class="px-12 py-4 bg-m-red hover:bg-white hover:text-black transition-all text-xs font-bold tracking-[0.3em] flex items-center gap-4">
+                    ENTER SHOWCASE
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </button>
+            </div>
+            <div class="w-1/2 flex items-center justify-center pt-20">
+                <div class="car-container" style="scale: 1.5;">
+                    <div id="home-car-3d" class="car-3d"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: CAROUSEL -->
+    <div id="page-carousel" class="page">
+        <div class="flex flex-col items-center justify-center h-full pt-12 overflow-hidden">
+            <div class="text-center mb-12">
+                <h2 class="text-m-red tracking-[0.5em] text-xs font-bold mb-2">360° INTERACTIVE LINEUP</h2>
+                <h1 class="text-5xl font-black italic tracking-tighter">SELECT YOUR BEAST</h1>
+            </div>
+
+            <div id="carousel-track" class="flex gap-20 items-center justify-center transition-transform duration-500 transform-style-3d px-[20%] select-none cursor-grab active:cursor-grabbing">
+                <!-- Cars will be injected here -->
+            </div>
+
+            <div class="mt-20 flex gap-12 items-center">
+                <div class="flex gap-2">
+                    <button id="carousel-prev" class="w-12 h-12 border border-white/20 flex items-center justify-center hover:bg-m-red hover:border-m-red transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button id="carousel-next" class="w-12 h-12 border border-white/20 flex items-center justify-center hover:bg-m-red hover:border-m-red transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+                <p class="text-[10px] tracking-[0.5em] opacity-30 uppercase">Swipe or drag to explore</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: REVEAL & SPECS -->
+    <div id="page-specs" class="page">
+        <button onclick="navTo('carousel')" class="absolute top-12 right-12 w-12 h-12 border border-white/10 flex items-center justify-center hover:bg-m-red transition-all z-[1001]">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="flex flex-col md:flex-row h-full px-24 py-32 gap-12">
+            <div class="w-1/2 flex items-center justify-center relative">
+                <div id="spec-bg-glow" class="absolute w-[500px] h-[500px] bg-m-red/20 rounded-full blur-[120px] z-0"></div>
+                <div id="spec-car-container" class="car-container z-10" style="scale: 2.2;">
+                    <!-- Selected Car Model goes here -->
+                </div>
+            </div>
+
+            <div class="w-1/2 overflow-y-auto no-scrollbar pt-20">
+                <div id="spec-content">
+                    <h2 id="spec-tag" class="text-m-red font-bold tracking-[0.4em] text-xs mb-2">ULTIMATE POWERHOUSE</h2>
+                    <h1 id="spec-name" class="text-7xl font-black italic tracking-tighter mb-6 uppercase">THAR ROXX</h1>
+                    <p id="spec-desc" class="text-white/40 mb-12 max-w-lg leading-relaxed italic">The legend redefined with futuristic capability.</p>
+                    
+                    <div class="grid grid-cols-2 gap-8 mb-12">
+                        <div class="p-6 border border-white/5 bg-white/5 backdrop-blur-md rounded-sm">
+                            <span class="block text-[10px] text-white/30 uppercase tracking-widest mb-2">Engine</span>
+                            <span id="spec-engine" class="text-2xl font-bold tracking-tight">2.2L mHawk Diesel</span>
+                        </div>
+                        <div class="p-6 border border-white/5 bg-white/5 backdrop-blur-md rounded-sm">
+                            <span class="block text-[10px] text-white/30 uppercase tracking-widest mb-2">0-100 KM/H</span>
+                            <span id="spec-accel" class="text-2xl font-bold tracking-tight">9.2 Seconds</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8 mb-12">
+                        <div>
+                            <div class="flex justify-between text-[10px] uppercase tracking-widest text-white/50 mb-3">
+                                <span>Performance Power</span>
+                                <span id="stat-power-val">150 BHP</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full overflow-hidden">
+                                <div id="stat-power-bar" class="bar-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] uppercase tracking-widest text-white/50 mb-3">
+                                <span>Off-Road Dominance</span>
+                                <span id="stat-offroad-val">98%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full overflow-hidden">
+                                <div id="stat-offroad-bar" class="bar-fill" style="width: 98%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-10 pt-12 border-t border-white/5">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-white/30 uppercase tracking-widest mb-1">Pricing From</span>
+                            <span id="spec-price" class="text-4xl font-black text-m-gold tracking-tighter italic">₹ 12.99 LAKH</span>
+                        </div>
+                        <button class="bg-m-red px-10 py-5 text-xs font-bold tracking-[0.3em] hover:bg-white hover:text-black transition-all">BOOK TEST DRIVE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: COMPARE & ENQUIRY -->
+    <div id="page-compare" class="page">
+        <div class="container mx-auto px-12 py-32 flex flex-col h-full">
+            <div class="text-center mb-16">
+                <h1 class="text-5xl font-black italic tracking-tighter">CROSS ANALYSIS</h1>
+                <p class="text-[10px] tracking-[0.5em] text-white/30 uppercase mt-2">Side-by-side technical comparison</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-12 mb-20 flex-1">
+                <div class="flex flex-col gap-8">
+                    <select id="compare-1" class="bg-white/5 border border-white/10 p-4 text-xs font-bold tracking-widest appearance-none focus:outline-none focus:border-m-red"></select>
+                    <div class="flex-1 flex items-center justify-center perspective-1000">
+                        <div id="compare-car-1" class="car-container" style="scale: 1.5;"></div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-8">
+                    <select id="compare-2" class="bg-white/5 border border-white/10 p-4 text-xs font-bold tracking-widest appearance-none focus:outline-none focus:border-m-red"></select>
+                    <div class="flex-1 flex items-center justify-center perspective-1000">
+                        <div id="compare-car-2" class="car-container" style="scale: 1.5;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="max-w-4xl mx-auto w-full py-20 border-t border-white/5">
+                <div class="grid grid-cols-2 gap-20">
+                    <div>
+                        <h2 class="text-3xl font-black italic tracking-tighter mb-8">GET IN TOUCH</h2>
+                        <form id="enquiry-form" class="space-y-4">
+                            <input type="text" placeholder="FULL NAME" required class="w-full bg-white/5 border border-white/10 p-4 text-xs tracking-widest focus:border-m-red outline-none">
+                            <input type="email" placeholder="EMAIL ADDRESS" required class="w-full bg-white/5 border border-white/10 p-4 text-xs tracking-widest focus:border-m-red outline-none">
+                            <select class="w-full bg-white/5 border border-white/10 p-4 text-xs tracking-widest focus:border-m-red outline-none">
+                                <option>SELECT MODEL INTEREST</option>
+                                <option>THAR ROXX</option>
+                                <option>SCORPIO-N</option>
+                                <option>XUV700</option>
+                            </select>
+                            <button type="submit" class="w-full bg-m-red p-4 text-xs font-bold tracking-[0.3em] hover:bg-white hover:text-black transition-all">SUBMIT ENQUIRY</button>
+                        </form>
+                    </div>
+                    <div class="flex flex-col justify-center gap-12 opacity-40 italic">
+                        <p class="text-sm leading-relaxed block">"Our purpose is to enable people to rise. We do this by driving positive change in their lives and communities."</p>
+                        <div class="flex gap-6">
+                            <span class="text-xs font-bold tracking-[0.2em] border-b border-white pr-4 py-2">TWITTER</span>
+                            <span class="text-xs font-bold tracking-[0.2em] border-b border-white pr-4 py-2">INSTAGRAM</span>
+                            <span class="text-xs font-bold tracking-[0.2em] border-b border-white pr-4 py-2">FACEBOOK</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const CAR_DATA = [
+            { id: 'thar-roxx', name: 'THAR ROXX', tag: 'OFF-ROAD BEAST', desc: 'Conquer the unconquered with 5-door utility and legendary 4x4 grit.', engine: '2.2L mHawk Diesel', accel: '10.2s', power: 150, offroad: 98, price: '12.99', type: 'boxy', color: '#c0392b' },
+            { id: 'scorpio-n', name: 'SCORPIO-N', tag: 'THE BIG DADDY', desc: 'Dominating presence with unparalleled tech and command driving position.', engine: '2.0L mStallion Petrol', accel: '9.5s', power: 175, offroad: 85, price: '13.85', type: 'stepped', color: '#d4af37' },
+            { id: 'xuv-3xo', name: 'XUV 3XO', tag: 'COMPACT DOMINANCE', desc: 'Everything and more. Compact luxury with a panoramic view of the world.', engine: '1.2L Turbo Petrol', accel: '8.9s', power: 130, offroad: 40, price: '7.49', type: 'rounded', color: '#ffffff' },
+            { id: 'xuv700', name: 'XUV700', tag: 'THE FLAGSHIP', desc: 'Sophistication meets adrenaline with ADAS Level 2 and world-record safety.', engine: '2.2L Diesel/2.0L Petrol', accel: '9.2s', power: 200, offroad: 50, price: '13.99', type: 'large', color: '#0047AB' },
+            { id: 'be-6', name: 'BE 6', tag: 'ELECTRIC THRILL', desc: 'Pure electric power in a design that breaks every mold. Zero emissions, max thrill.', engine: '79 kWh Electric', accel: '5.5s', power: 280, offroad: 20, price: '25.00', type: 'coupe', color: '#B87333' },
+            { id: 'xev-9e', name: 'XEV 9e', tag: 'FUTURISTIC FASTBACK', desc: 'The peak of electric elegance and aerodynamic speed. The future is fast.', engine: '79 kWh Electric', accel: '6.2s', power: 250, offroad: 15, price: '28.00', type: 'fastback', color: '#E5E4E2' }
+        ];
+
+        // 3D Car Generator
+        function create3DCar(type, color = '#222') {
+            const container = document.createElement('div');
+            container.className = 'car-3d';
+            
+            const body = document.createElement('div');
+            body.className = 'car-body';
+            body.style.transformStyle = 'preserve-3d';
+            
+            const chassis = { w: 100, h: 40, d: 200, color: color };
+            const cabin = { w: 80, h: 40, d: 100, x: 0, y: -40, z: -20, color: color, opacity: 0.8 };
+
+            // Geometric Differentiation
+            if (type === 'boxy') { // Thar Roxx
+                cabin.w = 90; cabin.d = 120; cabin.y = -45; cabin.z = 20;
+            } else if (type === 'stepped') { // Scorpio-N
+                cabin.w = 85; cabin.d = 140; cabin.y = -35; cabin.z = 10;
+            } else if (type === 'rounded') { // XUV 3XO
+                chassis.w = 90; chassis.d = 160; cabin.w = 70; cabin.d = 90;
+            } else if (type === 'large') { // XUV700
+                chassis.w = 110; chassis.d = 220; cabin.w = 90; cabin.d = 160;
+            } else if (type === 'coupe') { // BE 6
+                cabin.h = 30; cabin.d = 180; cabin.y = -30; cabin.z = 0;
+            } else if (type === 'fastback') { // XEV 9e
+                cabin.h = 25; cabin.d = 190; cabin.y = -25; cabin.z = 0;
+            }
+
+            const parts = [chassis, cabin];
+
+            parts.forEach((p, pIdx) => {
+                const box = document.createElement('div');
+                box.style.width = p.w + 'px';
+                box.style.height = p.h + 'px';
+                box.style.position = 'absolute';
+                box.style.transformStyle = 'preserve-3d';
+                box.style.left = '50%';
+                box.style.top = '50%';
+                box.style.marginLeft = (-p.w/2) + 'px';
+                box.style.marginTop = (-p.h/2) + 'px';
+                box.style.transform = `translate3d(${p.x||0}px, ${p.y||0}px, ${p.z||0}px)`;
+
+                const faces = [
+                    { t: `rotateY(0deg) translateZ(${p.d/2}px)`, w: p.w, h: p.h }, // Front
+                    { t: `rotateY(180deg) translateZ(${p.d/2}px)`, w: p.w, h: p.h }, // Back
+                    { t: `rotateY(90deg) translateZ(${p.w/2}px)`, w: p.d, h: p.h }, // Right
+                    { t: `rotateY(-90deg) translateZ(${p.w/2}px)`, w: p.d, h: p.h }, // Left
+                    { t: `rotateX(90deg) translateZ(${p.h/2}px)`, w: p.w, h: p.d }, // Top
+                    { t: `rotateX(-90deg) translateZ(${p.h/2}px)`, w: p.w, h: p.d }, // Bottom
+                ];
+
+                faces.forEach((f, idx) => {
+                    const face = document.createElement('div');
+                    face.className = 'face';
+                    face.style.width = f.w + 'px';
+                    face.style.height = f.h + 'px';
+                    face.style.transform = f.t;
+                    
+                    let faceColor = color;
+                    if (pIdx === 1 && idx < 4) faceColor = '#111'; // Windows for cabin
+                    
+                    face.style.background = `linear-gradient(rgba(0,0,0,${idx === 4 ? 0.3 : 0.6}), rgba(0,0,0,0.2)), ${faceColor}`;
+                    
+                    // Headlights / Taillights
+                    if (pIdx === 0 && idx === 0) { // Chassis Front
+                        const l = document.createElement('div');
+                        l.style.cssText = 'position:absolute; width:15px; height:8px; background:white; top:5px; left:10px; box-shadow:0 0 10px white;';
+                        face.appendChild(l);
+                        const r = l.cloneNode(); r.style.left = 'auto'; r.style.right = '10px';
+                        face.appendChild(r);
+                    }
+                    if (pIdx === 0 && idx === 1) { // Chassis Back
+                        const l = document.createElement('div');
+                        l.style.cssText = 'position:absolute; width:15px; height:8px; background:red; top:5px; left:10px; box-shadow:0 0 10px red;';
+                        face.appendChild(l);
+                        const r = l.cloneNode(); r.style.left = 'auto'; r.style.right = '10px';
+                        face.appendChild(r);
+                    }
+
+                    box.appendChild(face);
+                });
+                body.appendChild(box);
+            });
+
+            // Wheels
+            const wheelPos = [
+                {x: -chassis.w/2 - 5, z: -chassis.d/3}, {x: chassis.w/2 + 5, z: -chassis.d/3},
+                {x: -chassis.w/2 - 5, z: chassis.d/3}, {x: chassis.w/2 + 5, z: chassis.d/3}
+            ];
+            wheelPos.forEach(pos => {
+                const wheel = document.createElement('div');
+                wheel.className = 'wheel';
+                wheel.style.left = '50%';
+                wheel.style.top = '50%';
+                wheel.style.transform = `translate3d(${pos.x}px, 20px, ${pos.z}px) rotateY(90deg)`;
+                body.appendChild(wheel);
+            });
+
+            container.appendChild(body);
+            return container;
+        }
+
+        // Router
+        function navTo(pageId) {
+            const overlay = document.getElementById('transition-overlay');
+            overlay.classList.add('active');
+            
+            setTimeout(() => {
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                
+                const target = document.getElementById('page-' + pageId);
+                target.classList.add('active');
+                
+                const link = document.querySelector(`.nav-link[data-page="${pageId}"]`);
+                if (link) link.classList.add('active');
+                
+                overlay.classList.remove('active');
+
+                // Special handling for Specs Page
+                if (pageId === 'specs') {
+                    document.getElementById('spec-car-container').classList.add('reveal-pop');
+                    setTimeout(() => {
+                        document.getElementById('stat-power-bar').style.width = targetCar.power/3 + '%';
+                        document.getElementById('stat-offroad-bar').style.width = targetCar.offroad + '%';
+                    }, 500);
+                }
+            }, 600);
+        }
+
+        // Carousel State
+        let carouselPos = 0;
+        let targetCar = CAR_DATA[0];
+
+        function initCarousel() {
+            const track = document.getElementById('carousel-track');
+            CAR_DATA.forEach((car, i) => {
+                const item = document.createElement('div');
+                item.className = 'carousel-item group flex flex-col items-center justify-center transition-all duration-500 scale-75 opacity-20';
+                item.style.minWidth = '400px';
+                
+                const carNode = create3DCar(car.type, car.color);
+                const modelContainer = document.createElement('div');
+                modelContainer.className = 'car-container mb-12 hover:glow-red transition-all cursor-pointer';
+                modelContainer.onclick = () => {
+                   targetCar = car;
+                   updateSpecPage(car);
+                   navTo('specs');
+                };
+                modelContainer.appendChild(carNode);
+                
+                const label = document.createElement('div');
+                label.innerHTML = `<h3 class="text-3xl font-black italic mb-1">${car.name}</h3><p class="text-[10px] tracking-[0.4em] opacity-50">${car.tag}</p>`;
+                label.className = 'text-center pointer-events-none';
+
+                item.appendChild(modelContainer);
+                item.appendChild(label);
+                track.appendChild(item);
+            });
+            updateCarousel();
+        }
+
+        function updateCarousel() {
+            const track = document.getElementById('carousel-track');
+            const items = track.querySelectorAll('.carousel-item');
+            const offset = -carouselPos * 480; 
+            track.style.transform = `translateX(${offset}px)`;
+
+            items.forEach((item, i) => {
+                item.classList.remove('scale-100', 'opacity-100', 'scale-75', 'opacity-20');
+                if (i === carouselPos) {
+                    item.classList.add('scale-100', 'opacity-100');
+                } else {
+                    item.classList.add('scale-75', 'opacity-20');
+                }
+            });
+        }
+
+        document.getElementById('carousel-next').onclick = () => {
+            if (carouselPos < CAR_DATA.length - 1) carouselPos++;
+            updateCarousel();
+        };
+        document.getElementById('carousel-prev').onclick = () => {
+            if (carouselPos > 0) carouselPos--;
+            updateCarousel();
+        };
+
+        function updateSpecPage(car) {
+            document.getElementById('spec-name').textContent = car.name;
+            document.getElementById('spec-tag').textContent = car.tag;
+            document.getElementById('spec-desc').textContent = car.desc;
+            document.getElementById('spec-engine').textContent = car.engine;
+            document.getElementById('spec-accel').textContent = car.accel;
+            document.getElementById('stat-power-val').textContent = car.power + ' BHP';
+            document.getElementById('stat-offroad-val').textContent = car.offroad + '%';
+            document.getElementById('spec-price').textContent = `₹ ${car.price} LAKH`;
+            
+            const container = document.getElementById('spec-car-container');
+            container.innerHTML = '';
+            container.classList.remove('reveal-pop');
+            void container.offsetWidth; // Force reflow
+            container.appendChild(create3DCar(car.type, car.color));
+        }
+
+        // Particle System for Page 1
+        function initParticles() {
+            const canvas = document.getElementById('home-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: Math.random() * 2 + 1,
+                    size: Math.random() * 2
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(192, 57, 43, 0.4)';
+                particles.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    if (p.y > canvas.height) p.y = -10;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.x < 0) p.x = canvas.width;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // Compare Logic
+        function initCompare() {
+            const s1 = document.getElementById('compare-1');
+            const s2 = document.getElementById('compare-2');
+            CAR_DATA.forEach(car => {
+                s1.add(new Option(car.name, car.id));
+                s2.add(new Option(car.name, car.id));
+            });
+
+            s1.onchange = () => updateCompare(1, s1.value);
+            s2.onchange = () => updateCompare(2, s2.value);
+            
+            s1.value = CAR_DATA[0].id;
+            s2.value = CAR_DATA[1].id;
+            updateCompare(1, s1.value);
+            updateCompare(2, s2.value);
+        }
+
+        function updateCompare(slot, id) {
+            const car = CAR_DATA.find(c => c.id === id);
+            const container = document.getElementById(`compare-car-${slot}`);
+            container.innerHTML = '';
+            container.appendChild(create3DCar(car.type, car.color));
+        }
+
+        // Enquiry
+        document.getElementById('enquiry-form').onsubmit = (e) => {
+            e.preventDefault();
+            alert('ENQUIRY RECEIVED. OUR REPRESENTATIVE WILL CALL YOU SOON.');
+            e.target.reset();
+        };
+
+        // Init
+        window.onload = () => {
+            initParticles();
+            initCarousel();
+            initCompare();
+            document.getElementById('home-car-3d').appendChild(create3DCar('boxy', '#c0392b'));
+        };
+
+        window.onresize = () => {
+            const canvas = document.getElementById('home-canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+    </script>
+</body>
+</html>
